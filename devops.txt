@@ -1,0 +1,114 @@
+default:
+  tags: [devcloud-kubernetes]
+
+cache:
+  paths:
+    - .m2/repository/
+
+stages:
+  - build
+  - package
+  - publish
+  - deploy-snapshot
+  - deploy-release
+
+build:
+  stage: build
+  tags:
+    - devcloud-kubernetes
+
+  script:
+    - mvn package
+    - ls -ltr target/
+  
+  artifacts:
+    paths:
+      - target/
+    reports:
+      dotenv: build1.env
+
+include:
+  - project: 'ubs-ag/group-coo/group-ops/go-central-automation/internal/Emerge_t'
+    file: '/templates/docker-build-push.yml'
+
+deployaks:
+  extends: akshackathon
+  stage: deploy-snapshot
+  variables:
+    AKS_YAML_PATH: aks-deploy.yml
+===========
+default:
+  tags: [devcloud-kubernetes]
+
+cache:
+  paths:
+    - .m2/repository/
+
+stages:
+  - build
+  - package
+  - publish
+  - deploy-snapshot
+  - deploy-release
+
+build:
+  stage: build
+  tags:
+    - devcloud-kubernetes
+  script:
+    - mvn package
+    - ls -ltr target/
+  artifacts:
+    paths:
+      - target/
+    reports:
+      dotenv: build1.env
+
+prepare_snapshot:
+  stage: deploy-snapshot  # Ensure this stage exists
+
+======
+# Use a specific Java 17 image
+FROM lbdevops/wheelwright-java-17:2021.10
+
+# Set environment variables for the application
+ENV APP_NAME=imagetoinfra-1.0.jar
+ENV APP_DIR=/app
+
+# Create a non-root user and group for security
+RUN groupadd -r imagetoinfra && useradd -r -g imagetoinfra imagetoinfra
+
+# Set up the working directory
+WORKDIR $APP_DIR
+
+# Copy the application jar file to the working directory
+COPY /target/$APP_NAME $APP_DIR/
+
+# Change ownership of the application directory to the non-root user
+RUN chown -R imagetoinfra:imagetoinfra $APP_DIR
+
+# Switch to the non-root user
+USER imagetoinfra
+
+# Expose the application port
+EXPOSE 8080
+
+# Add a health check (adjust the path if needed for your app)
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:8080/health || exit 1
+
+# Set the entry point to run the application
+ENTRYPOINT ["java", "-jar", "./imagetoinfra-1.0.jar"]
+
+  script:
+    - echo "Preparing snapshot..."
+
+include:
+  - project: 'ubs-ag/group-coo/group-ops/go-central-automation/internal/Emerge_t'
+    file: '/templates/docker-build-push.yml'
+
+deployaks:
+  extends: akshackathon
+  stage: deploy-release  # Update to the correct stage if required
+  variables:
+    AKS_YAML_PATH: aks-deploy.yml
