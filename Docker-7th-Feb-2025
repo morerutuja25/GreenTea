@@ -185,12 +185,13 @@ ENV PATH=$JAVA_HOME/bin:$PATH
 
 # Install Maven (3.9.9)
 RUN cd /opt && \
-    wget https://dlcdn.apache.org/maven/maven-3/3.9.9/binaries/apache-maven-3.9.9-bin.tar.gz && \
+    wget https://archive.apache.org/dist/maven/maven-3/3.9.9/binaries/apache-maven-3.9.9-bin.tar.gz && \
     tar xvf apache-maven-3.9.9-bin.tar.gz && \
     rm apache-maven-3.9.9-bin.tar.gz && \
     echo "export M2_HOME=/opt/apache-maven-3.9.9" >> /etc/profile && \
     echo "export M2=\$M2_HOME/bin" >> /etc/profile && \
     echo "export PATH=\$M2:\$PATH" >> /etc/profile
+
 
 # Install the latest Terraform
 RUN cd /opt && \
@@ -319,3 +320,4 @@ RUN cd /usr/local/bin && \
 ENV M2_HOME=/opt/apache-maven-3.9.9
 ENV M2=$M2_HOME/bin
 ENV PATH=$M2:$PATH
+
